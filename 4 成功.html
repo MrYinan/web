@@ -1,0 +1,2416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄河祭祀文化研学平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- 在现有 Tailwind/Font Awesome 引入后添加 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 自定义配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B4513', // 土黄色 契合黄河文化
+                        secondary: '#CD853F',
+                        accent: '#D2691E',
+                        light: '#F5DEB3',
+                        dark: '#5C4033'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        serif: ['Noto Serif SC', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            }
+            .scroll-smooth {
+                scroll-behavior: smooth;
+            }
+            .modal-open {
+                overflow: hidden;
+            }
+        }
+
+/* 新增：默认隐藏所有省份底图组 */
+.province-imgs {
+    display: none !important;
+    /* 把布局样式移到这里，作为默认样式 */
+    gap: 16px !important;
+    width: 100% !important;
+    height: 120px !important;
+}
+
+/* 当省份底图组被激活时，才显示为flex布局 */
+.province-imgs.active {
+    display: flex !important;
+    /* 激活时的布局样式，继承自上面 */
+}
+
+/* 保证每个图片按钮宽度均等 */
+.province-imgs .bg-img-btn {
+    flex: 1 !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+}
+
+/* 让图片填充按钮 */
+.province-imgs .bg-img-btn img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+        /* 轮播相关样式，放在 @layer utilities 外面 */
+        @layer components {
+            .carousel-item {
+                position: absolute;
+                inset: 0;
+            }
+            .carousel-dot-active {
+                opacity: 1 !important;
+            }
+        }
+        /* 明信片文字容器 - 核心：清除所有可能的横线样式 */
+            #postcardText {
+                border: none !important; /* 移除边框 */
+                text-decoration: none !important; /* 移除文字下划线 */
+                outline: none !important; /* 移除轮廓线 */
+                border-bottom: none !important; /* 针对性移除底部横线（如果只有底部有） */
+                border-top: none !important; /* 针对性移除顶部横线（如果只有顶部有） */
+                box-shadow: none !important; /* 移除可能模拟横线的阴影 */
+            }
+
+            /* 若横线来自输入框（postcardTextEditor），同步清除 */
+            #postcardTextEditor {
+                border: 1px solid #eee !important; /* 如需保留输入框边框，改为浅色系；不需要则设为 none */
+                text-decoration: none !important;
+                outline: none !important;
+            }
+            /* 知识问答美化 - 新增/替换这部分样式 */
+#quiz .quiz-item {
+    background-color: #f9f5f0; /* 浅米色背景，契合整体风格 */
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem !important;
+    border: 1px solid #e8d8c0;
+}
+
+#quiz .quiz-item h3 {
+    text-align: center !important; /* 题目强制居中 */
+    margin-bottom: 1.5rem !important;
+    color: #5C4033 !important; /* 深色文字更醒目 */
+    font-size: 1.25rem !important;
+}
+
+#quiz .quiz-item .space-y-2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 选项整体居中 */
+    gap: 1rem !important; /* 增大选项间距 */
+    margin-left: 0 !important; /* 移除原有左侧偏移 */
+}
+
+#quiz .quiz-item label {
+    width: 80%; /* 选项宽度限制，避免过宽 */
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+}
+
+#quiz .quiz-item label:hover {
+    background-color: #F5DEB3; /* hover时浅棕底色 */
+    border-color: #D2691E;
+}
+
+#quiz .quiz-item input[type="radio"]:checked + span {
+    font-weight: 600;
+    color: #8B4513;
+}
+
+/* 答题结果提示居中 */
+#quiz .quiz-item #q1Result,
+#quiz .quiz-item #q2Result,
+#quiz .quiz-item #q3Result,
+#quiz .quiz-item #q4Result,
+#quiz .quiz-item #q5Result {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* 核心修改1：开始检验按钮 居中+放大 样式 */
+#startQuizBtn {
+    display: block !important;
+    margin: 0 auto 2rem auto !important; /* 水平居中，底部留间距 */
+    padding: 1.25rem 3rem !important; /* 放大按钮内边距 */
+    font-size: 1.25rem !important; /* 放大按钮文字 */
+    font-weight: 600 !important;
+}
+    </style>
+</head>
+<body class="bg-light scroll-smooth">
+    <!-- 导航栏 -->
+    <nav class="sticky top-0 bg-primary text-white shadow-lg z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-landmark text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold">黄河祭祀文化研学</h1>
+            </div>
+            <!-- 移动端菜单按钮 -->
+            <button id="menuBtn" class="md:hidden text-2xl">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <!-- 桌面端导航 -->
+            <ul class="hidden md:flex gap-6">
+                <li><a href="#manual" class="hover:text-light transition-colors">研学手册</a></li>
+                <li><a href="#symbol" class="hover:text-light transition-colors">符号化科普</a></li>
+                <li><a href="#postcard" class="hover:text-light transition-colors">研学明信片</a></li>
+                <li><a href="#quiz" class="hover:text-light transition-colors">知识问答</a></li>
+                <li><a href="#about" class="hover:text-light transition-colors">关于我们</a></li>
+            </ul>
+        </div>
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="md:hidden hidden bg-secondary px-4 py-2">
+            <ul class="flex flex-col gap-3">
+                <li><a href="#manual" class="hover:text-light transition-colors block py-1">研学手册</a></li>
+                <li><a href="#symbol" class="hover:text-light transition-colors block py-1">符号化科普</a></li>
+                <li><a href="#postcard" class="hover:text-light transition-colors block py-1">研学明信片</a></li>
+                <li><a href="#quiz" class="hover:text-light transition-colors block py-1">知识问答</a></li>
+                <li><a href="#about" class="hover:text-light transition-colors block py-1">关于我们</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 头部横幅 -->
+    <!-- 头部轮播横幅 -->
+    <header class="relative h-64 md:h-96 overflow-hidden">
+        <!-- 轮播容器 -->
+        <div id="carousel" class="relative w-full h-full">
+            <!-- 轮播项 -->
+            <div class="carousel-items h-full">
+                <!-- 轮播图1 -->
+                <div class="carousel-item absolute inset-0 opacity-100 transition-opacity duration-1000 bg-cover bg-center" style="background-image: url('https://picsum.photos/id/1036/1920/1080');">
+                    <div class="absolute inset-0 bg-dark/60 flex items-center justify-center">
+                        <div class="text-center text-white px-4">
+                            <h2 class="text-3xl md:text-5xl font-bold text-shadow mb-4">黄河祭祀文化研学之旅</h2>
+                            <p class="text-lg md:text-xl max-w-2xl mx-auto">探寻黄河流域祭祀文化脉络，感受中华传统文化魅力</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 轮播图2 -->
+                <div class="carousel-item absolute inset-0 opacity-0 transition-opacity duration-1000 bg-cover bg-center" style="background-image: url('https://picsum.photos/id/1018/1920/1080');">
+                    <div class="absolute inset-0 bg-dark/60 flex items-center justify-center">
+                        <div class="text-center text-white px-4">
+                            <h2 class="text-3xl md:text-5xl font-bold text-shadow mb-4">传承黄河文明</h2>
+                            <p class="text-lg md:text-xl max-w-2xl mx-auto">领略千年祭祀礼仪，感悟中华人文精神</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- 轮播图3 -->
+                <div class="carousel-item absolute inset-0 opacity-0 transition-opacity duration-1000 bg-cover bg-center" style="background-image: url('https://picsum.photos/id/1019/1920/1080');">
+                    <div class="absolute inset-0 bg-dark/60 flex items-center justify-center">
+                        <div class="text-center text-white px-4">
+                            <h2 class="text-3xl md:text-5xl font-bold text-shadow mb-4">行走黄河流域</h2>
+                            <p class="text-lg md:text-xl max-w-2xl mx-auto">解锁九大省份祭祀文化，定制专属研学记忆</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 轮播指示器 -->
+            <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
+                <button class="carousel-dot w-3 h-3 rounded-full bg-white opacity-100"></button>
+                <button class="carousel-dot w-3 h-3 rounded-full bg-white opacity-50"></button>
+                <button class="carousel-dot w-3 h-3 rounded-full bg-white opacity-50"></button>
+            </div>
+            
+            <!-- 左右切换按钮（可选） -->
+            <button class="carousel-prev absolute left-4 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-light z-10">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="carousel-next absolute right-4 top-1/2 -translate-y-1/2 text-white text-3xl hover:text-light z-10">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- 研学手册板块 -->
+        <section id="manual" class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-2">研学手册</h2>
+                <div class="w-20 h-1 bg-accent mx-auto"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <!-- 手册封面展示 -->
+                <div class="rounded-lg overflow-hidden shadow-xl">
+                    <img src="https://picsum.photos/id/1060/800/600" alt="黄河祭祀文化研学手册封面" class="w-full h-auto">
+                </div>
+
+                <!-- 手册介绍与下载 -->
+                <div>
+                    <h3 class="text-2xl font-semibold text-dark mb-4">黄河祭祀文化研学手册</h3>
+                    <p class="text-gray-700 mb-6 leading-relaxed">
+                        本手册为黄河祭祀文化研学配套科普内容，涵盖丰富的研学点位介绍、特色文化任务指引、祭祀文化知识科普等内容。
+                        手册以轻量化形式呈现，帮助研学人员快速了解黄河流域祭祀文化的核心内涵，掌握研学过程中的关键知识点和实践任务。
+                    </p>
+
+                    <!-- 下载方式 -->
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <h4 class="text-xl font-medium text-primary mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i>获取方式
+                        </h4>
+                        <div class="flex flex-col items-center">
+                            <!-- 二维码展示 -->
+                            <div class="w-48 h-48 bg-white p-2 border-2 border-gray-200 mb-4">
+                                <img src="https://picsum.photos/id/1/200/200" alt="手册下载二维码" class="w-full h-full">
+                            </div>
+                            <p class="text-gray-600 mb-3">扫码下载电子版研学手册</p>
+                            <!-- 备用下载链接 -->
+                            <a href="#" class="bg-accent text-white px-6 py-2 rounded-lg hover:bg-primary transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-link"></i>
+                                点击下载手册
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 符号化科普板块 -->
+        <section id="symbol" class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-2">符号化科普</h2>
+                <div class="w-20 h-1 bg-accent mx-auto"></div>
+            </div>
+
+            <!-- 科普分类标签 -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button class="科普-tab active bg-primary text-white px-5 py-2 rounded-lg" data-tab="ritual">礼器系列</button>
+                <button class="科普-tab bg-secondary text-white px-5 py-2 rounded-lg" data-tab="custom">祭祀习俗</button>
+                <button class="科普-tab bg-secondary text-white px-5 py-2 rounded-lg" data-tab="art">祭祀艺术</button>
+                <button class="科普-tab bg-secondary text-white px-5 py-2 rounded-lg" data-tab="regional">地域特色</button>
+            </div>
+
+            <!-- 礼器系列 -->
+            <div id="ritual-tab" class="科普内容 block">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 玉璧 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="玉璧">
+                        <img src="https://picsum.photos/id/175/600/400" alt="玉璧" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">玉璧</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                玉璧是一种中央有穿孔的扁平状圆形玉器，为我国传统的玉礼器之一，也是"六瑞"之一。在祭祀活动中，玉璧常被用于祭天，象征着天圆地方的宇宙观。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 玉琮 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="玉琮">
+                        <img src="https://picsum.photos/id/176/600/400" alt="玉琮" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">玉琮</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                玉琮是一种内圆外方的筒形玉器，是古代人们用于祭祀神祇的一种礼器。其形制体现了古人天圆地方的宇宙观，为新石器时代良渚文化的典型器物。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 青铜尊 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="青铜尊">
+                        <img src="https://picsum.photos/id/177/600/400" alt="青铜尊" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">青铜尊</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                青铜尊是商周时期重要的礼器和酒器，主要用于祭祀活动中盛放酒醴。造型多样，纹饰精美，反映了当时高超的青铜铸造工艺和祭祀文化。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 青铜爵 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="青铜爵">
+                        <img src="https://picsum.photos/id/178/600/400" alt="青铜爵" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">青铜爵</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                青铜爵是中国古代一种用于饮酒的容器，也是最早的青铜礼器之一。在祭祀仪式中，爵常被用作献酒的礼器，是身份和等级的象征。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 漆豆 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="漆豆">
+                        <img src="https://picsum.photos/id/179/600/400" alt="漆豆" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">漆豆</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                漆豆是古代一种盛食的礼器，以漆工艺装饰而成。在祭祀活动中，漆豆用于盛放祭品，是礼制文化的重要载体，体现了古代祭祀的等级规范。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 祭祀习俗 -->
+            <div id="custom-tab" class="科普内容 hidden">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 迎神庙会 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="迎神庙会">
+                        <img src="https://picsum.photos/id/180/600/400" alt="迎神庙会" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">迎神庙会</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                迎神庙会是民间祭祀文化的重要形式，通常在特定的宗教节日或祭祀日举行，包含迎神、巡游、祭拜等环节，是民众表达祈福求安愿望的重要方式。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 中元祭祖 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="中元祭祖">
+                        <img src="https://picsum.photos/id/181/600/400" alt="中元祭祖" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">中元祭祖</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                中元节又称鬼节、七月半，是中华民族传统的祭祖节日。民间会通过祭祀、烧纸、放河灯等方式缅怀先人，表达对逝去亲人的思念之情。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 龙舟祭 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="龙舟祭">
+                        <img src="https://picsum.photos/id/182/600/400" alt="龙舟祭" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">龙舟祭</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                龙舟祭主要流行于南方水乡，与端午节纪念屈原的习俗相结合。通过龙舟竞渡、祭祀龙神等仪式，祈求风调雨顺、平安吉祥，是水上祭祀文化的代表。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 煨桑 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="煨桑">
+                        <img src="https://picsum.photos/id/190/600/400" alt="煨桑" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">煨桑</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                煨桑是藏族最普遍的一种宗教仪式，用松柏枝焚起的霭蔼烟雾，是藏族祭天地诸神的仪式。煨桑时，先将柏树枝放置煨桑炉中点燃，然后撒上些许青稞、茶叶、糖等。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 火把节祭火 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="火把节祭火">
+                        <img src="https://picsum.photos/id/191/600/400" alt="火把节祭火" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">火把节祭火</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                火把节祭火是彝族、白族、纳西族等民族的传统祭祀活动，通常在农历六月二十四举行。通过点火把、祭火神等仪式，祈求驱邪避灾、五谷丰登、人畜兴旺。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 祭祀艺术 -->
+            <div id="art-tab" class="科普内容 hidden">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 傩戏面具 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="傩戏面具">
+                        <img src="https://picsum.photos/id/183/600/400" alt="傩戏面具" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">傩戏面具</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                傩戏面具是傩戏表演的重要道具，造型夸张、色彩鲜明，不同的面具代表不同的神祇和角色。傩戏面具不仅是艺术作品，更是祭祀文化的重要载体。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 傩舞 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="傩舞">
+                        <img src="https://picsum.photos/id/184/600/400" alt="傩舞" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">傩舞</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                傩舞是一种古老的祭祀舞蹈，源于上古氏族社会的图腾崇拜，旨在驱邪纳吉、祈求平安。表演时舞者佩戴傩面具，动作刚劲有力，具有浓厚的原始宗教色彩。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 雩舞 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="雩舞">
+                        <img src="https://picsum.photos/id/192/600/400" alt="雩舞" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">雩舞</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                雩舞是古代求雨的祭祀舞蹈，是雩祭仪式中的重要组成部分。舞者通常模拟龙的形态，通过特定的舞蹈动作祈求上天降雨，以解旱灾，体现了古人对自然的敬畏。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 祠神戏 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="祠神戏">
+                        <img src="https://picsum.photos/id/193/600/400" alt="祠神戏" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">祠神戏</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                祠神戏又称酬神戏，是民间为祭祀神灵、祈求平安而演出的戏曲形式。通常在祠堂、庙宇或广场演出，内容多与祈福、驱邪、感恩相关，是祭祀与艺术的结合。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 云雷纹 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="云雷纹">
+                        <img src="https://picsum.photos/id/185/600/400" alt="云雷纹" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">云雷纹</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                云雷纹是商周时期青铜器上常见的纹饰，由连续的回旋线条构成，象征着云气和雷声，是古人对自然力量的崇拜体现，常用于祭祀礼器的装饰。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 凤鸟纹 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="凤鸟纹">
+                        <img src="https://picsum.photos/id/194/600/400" alt="凤鸟纹" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">凤鸟纹</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                凤鸟纹是中国古代青铜器上的重要纹饰，凤鸟被视为神鸟，象征吉祥、美好与神圣。在祭祀礼器上装饰凤鸟纹，表达了古人对神灵的敬仰和对美好生活的向往。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 地域特色 -->
+            <div id="regional-tab" class="科普内容 hidden">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 青海湖祭海 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="青海湖祭海">
+                        <img src="https://picsum.photos/id/186/600/400" alt="青海湖祭海" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">青海：青海湖祭海</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                青海湖祭海是青海地区蒙古族、藏族等民族的传统祭祀活动，已有数百年历史。通过祭海仪式祈求海神庇佑，风调雨顺，渔业丰收。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 天水公祭伏羲大典 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="天水公祭伏羲大典">
+                        <img src="https://picsum.photos/id/187/600/400" alt="天水公祭伏羲大典" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">甘肃：天水公祭伏羲大典</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                天水是人文始祖伏羲的诞生地，公祭伏羲大典是甘肃省重要的文化祭祀活动，旨在传承和弘扬伏羲文化，缅怀始祖功绩，增强民族文化认同。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 隆德马社火/高台社火 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="隆德马社火">
+                        <img src="https://picsum.photos/id/195/600/400" alt="隆德马社火" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">宁夏：隆德马社火/高台社火</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                隆德马社火是宁夏隆德县的传统民俗祭祀活动，融合了舞蹈、音乐、戏剧等多种艺术形式，高台社火更是其特色，通过登高表演祈求风调雨顺、平安吉祥。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 祭敖包 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="祭敖包">
+                        <img src="https://picsum.photos/id/196/600/400" alt="祭敖包" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">内蒙古：祭敖包</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                祭敖包是蒙古族的传统祭祀活动，敖包是草原上用石头、泥土堆砌的祭祀载体。通过祭敖包祈求天地神保佑草原风调雨顺、人畜兴旺、平安吉祥。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 凉山彝族尼木措毕祭祀 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="尼木措毕祭祀">
+                        <img src="https://picsum.photos/id/197/600/400" alt="尼木措毕祭祀" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">四川：凉山彝族尼木措毕祭祀</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                尼木措毕是凉山彝族最重要的祭祖大典，每三年或七年举行一次，通过复杂的仪式缅怀祖先、超度亡灵，是彝族文化传承的重要载体。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 黄帝陵公祭 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="黄帝陵公祭">
+                        <img src="https://picsum.photos/id/188/600/400" alt="黄帝陵公祭" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">陕西：黄帝陵公祭</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                黄帝陵公祭是中华民族祭祀人文始祖轩辕黄帝的重要活动，每年清明节在陕西黄陵举行。大典庄重肃穆，是传承中华文脉、凝聚民族情感的重要载体。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 万荣后土祠祭祀 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="后土祠祭祀">
+                        <img src="https://picsum.photos/id/198/600/400" alt="后土祠祭祀" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">山西：万荣后土祠祭祀</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                万荣后土祠是祭祀后土圣母的圣地，后土祠祭祀活动历史悠久，是华夏民族祭祀大地之母的重要仪式，祈求五谷丰登、国泰民安。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 浚县正月古庙会/社火 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="浚县古庙会">
+                        <img src="https://picsum.photos/id/199/600/400" alt="浚县古庙会" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">河南：浚县正月古庙会/社火</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                浚县正月古庙会是河南浚县的传统祭祀民俗活动，已有1600多年历史，结合了祭祀、社火、商贸等元素，是华北地区规模最大的古庙会之一。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 曲阜祭孔大典 -->
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover cursor-pointer" data-item="祭孔大典">
+                        <img src="https://picsum.photos/id/200/600/400" alt="祭孔大典" class="w-full h-48 object-cover">
+                        <div class="p-5">
+                            <h3 class="text-xl font-semibold text-primary mb-2">山东：曲阜祭孔大典</h3>
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                曲阜祭孔大典是祭祀孔子的隆重仪式，每年孔子诞辰日举行，大典遵循古制，礼仪规范，是传承儒家文化、弘扬中华传统美德的重要活动。
+                            </p>
+                            <div class="flex gap-3 text-accent">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-images"></i>多图</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-video"></i>视频</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- 研学明信片板块 -->
+<section id="postcard" class="mb-16">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-primary mb-2">研学明信片</h2>
+        <div class="w-20 h-1 bg-accent mx-auto"></div>
+        <p class="mt-4 text-gray-700">完成研学手册任务，点亮对应印章，定制专属研学明信片</p>
+    </div>
+
+    <!-- 印章点亮进度 -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h3 class="text-xl font-semibold text-primary mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-stamp"></i>我的印章进度
+        </h3>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-4">
+        <!-- 所有印章初始均未点亮 -->
+        <div class="seal-item text-center" data-province="青">
+            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span class="text-gray-500 font-bold">青</span>
+            </div>
+            <p class="text-sm text-gray-500">青海</p>
+        </div>
+        <div class="seal-item text-center" data-province="陕">
+            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span class="text-gray-500 font-bold">陕</span>
+            </div>
+            <p class="text-sm text-gray-500">陕西</p>
+        </div>
+            <!-- 未点亮印章 -->
+            <div class="seal-item text-center" data-province="甘">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">甘</span>
+                </div>
+                <p class="text-sm text-gray-500">甘肃</p>
+            </div>
+            <div class="seal-item text-center" data-province="宁">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">宁</span>
+                </div>
+                <p class="text-sm text-gray-500">宁夏</p>
+            </div>
+            <div class="seal-item text-center" data-province="蒙">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">蒙</span>
+                </div>
+                <p class="text-sm text-gray-500">内蒙古</p>
+            </div>
+            <div class="seal-item text-center" data-province="川">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">川</span>
+                </div>
+                <p class="text-sm text-gray-500">四川</p>
+            </div>
+            <div class="seal-item text-center" data-province="晋">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">晋</span>
+                </div>
+                <p class="text-sm text-gray-500">山西</p>
+            </div>
+            <div class="seal-item text-center" data-province="豫">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">豫</span>
+                </div>
+                <p class="text-sm text-gray-500">河南</p>
+            </div>
+            <div class="seal-item text-center" data-province="鲁">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span class="text-gray-500 font-bold">鲁</span>
+                </div>
+                <p class="text-sm text-gray-500">山东</p>
+            </div>
+        </div>
+        <div class="mt-4 text-center">
+            <button id="scanSealBtn" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">
+                <i class="fa-solid fa-qrcode mr-2"></i>扫码点亮印章
+            </button>
+        </div>
+
+        <!-- 二维码弹窗 -->
+        <div id="qrcodeModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 text-center">
+                <h3 class="text-xl font-semibold text-primary mb-4">扫码点亮印章</h3>
+                <div class="w-64 h-64 bg-white p-2 border-2 border-gray-200 mx-auto mb-4">
+                    <img src="https://picsum.photos/id/1/300/300" alt="点亮印章二维码" class="w-full h-full">
+                </div>
+                <p class="text-gray-600 mb-4">扫码完成印章点亮操作</p>
+                <button id="closeQrcodeModal" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-accent transition-colors">
+                    完成扫码
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="postcardMaker" class="hidden">
+        <!-- 明信片制作 -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- 明信片预览 -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-primary mb-4">明信片预览</h3>
+                <div id="postcardContainer" class="relative w-full h-[500px] border-2 border-gray-200 rounded-lg overflow-hidden bg-white">
+                    <!-- 明信片正面（上半部分） -->
+                    <div class="absolute top-0 left-0 w-full h-1/2 bg-cover bg-center"
+                         style="background-image: url('https://picsum.photos/id/1039/800/600');">
+                        <!-- 印章叠加在正面右上角 -->
+                        <div id="previewSeal" class="absolute top-4 right-4 w-16 h-16 bg-accent/80 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-xl">青</span>
+                        </div>
+                    </div>
+                    <!-- 明信片背面（下半部分） -->
+                    <div class="absolute bottom-0 left-0 w-full h-1/2 bg-white p-6">
+                        <!-- 左上角邮票框 -->
+                        <div class="absolute top-4 right-4 w-12 h-16 border border-gray-300"></div>
+                        <!-- 左上角邮编框 -->
+                        <div class="absolute top-4 left-6 flex gap-1">
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                        </div>
+                        <!-- 左下角圆形图案 -->
+                        <div class="absolute bottom-8 left-6 w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span class="text-primary font-bold">研学</span>
+                        </div>
+                        <!-- 三条横线（文字编辑区） -->
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3/5">
+                            <div class="border-b border-gray-300 mb-4"></div>
+                            <div class="border-b border-gray-300 mb-4"></div>
+                            <div class="border-b border-gray-300 mb-4"></div>
+                            <!-- 预览用的文字容器 -->
+                            <div id="postcardText"
+                                 class="absolute top-0 left-0 w-full h-full bg-transparent pointer-events-none text-gray-800"
+                                 style="border: none; text-decoration: none; outline: none;">
+                                黄河之水天上来，奔流到海不复回。—— 青海湖祭海研学纪念
+                            </div>
+                        </div>
+                        <!-- 右下角邮编框 -->
+                        <div class="absolute bottom-4 right-6 flex gap-1">
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                            <div class="w-4 h-4 border border-gray-300"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 明信片编辑 -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-primary mb-4">定制明信片</h3>
+                
+                <!-- 选择底图 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">选择明信片底图</label>
+                    <!-- 省份标签 -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button class="province-tab bg-primary text-white px-3 py-1 rounded-md text-sm" data-province="qinghai">青海</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="gansu">甘肃</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="ningxia">宁夏</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="neimenggu">内蒙古</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="sichuan">四川</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="shanxi">陕西</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="shanxi2">山西</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="henan">河南</button>
+                        <button class="province-tab bg-gray-200 text-gray-700 px-3 py-1 rounded-md text-sm" data-province="shandong">山东</button>
+                    </div>
+                    <!-- 底图容器（按省份切换） -->
+                    <div class="mb-4">
+                        <!-- 青海底图 -->
+                        <div class="province-imgs" data-province="qinghai">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1039/800/600">
+                                <img src="https://picsum.photos/id/1039/200/150" alt="青海1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1042/800/600">
+                                <img src="https://picsum.photos/id/1042/200/150" alt="青海2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1043/800/600">
+                                <img src="https://picsum.photos/id/1043/200/150" alt="青海3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 甘肃底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="gansu">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1041/800/600">
+                                <img src="https://picsum.photos/id/1041/200/150" alt="甘肃1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1044/800/600">
+                                <img src="https://picsum.photos/id/1044/200/150" alt="甘肃2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1045/800/600">
+                                <img src="https://picsum.photos/id/1045/200/150" alt="甘肃3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 宁夏底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="ningxia">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1046/800/600">
+                                <img src="https://picsum.photos/id/1046/200/150" alt="宁夏1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1047/800/600">
+                                <img src="https://picsum.photos/id/1047/200/150" alt="宁夏2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1048/800/600">
+                                <img src="https://picsum.photos/id/1048/200/150" alt="宁夏3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 内蒙古底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="neimenggu">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1049/800/600">
+                                <img src="https://picsum.photos/id/1049/200/150" alt="内蒙古1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1050/800/600">
+                                <img src="https://picsum.photos/id/1050/200/150" alt="内蒙古2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1051/800/600">
+                                <img src="https://picsum.photos/id/1051/200/150" alt="内蒙古3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 四川底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="sichuan">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1052/800/600">
+                                <img src="https://picsum.photos/id/1052/200/150" alt="四川1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1053/800/600">
+                                <img src="https://picsum.photos/id/1053/200/150" alt="四川2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1054/800/600">
+                                <img src="https://picsum.photos/id/1054/200/150" alt="四川3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 陕西底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="shanxi">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1040/800/600">
+                                <img src="https://picsum.photos/id/1040/200/150" alt="陕西1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1055/800/600">
+                                <img src="https://picsum.photos/id/1055/200/150" alt="陕西2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1056/800/600">
+                                <img src="https://picsum.photos/id/1056/200/150" alt="陕西3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 山西底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="shanxi2">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1057/800/600">
+                                <img src="https://picsum.photos/id/1057/200/150" alt="山西1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1058/800/600">
+                                <img src="https://picsum.photos/id/1058/200/150" alt="山西2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1059/800/600">
+                                <img src="https://picsum.photos/id/1059/200/150" alt="山西3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 河南底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="henan">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1060/800/600">
+                                <img src="https://picsum.photos/id/1060/200/150" alt="河南1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1061/800/600">
+                                <img src="https://picsum.photos/id/1061/200/150" alt="河南2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1062/800/600">
+                                <img src="https://picsum.photos/id/1062/200/150" alt="河南3" class="w-full h-auto">
+                            </button>
+                        </div>
+                        <!-- 山东底图（默认隐藏） -->
+                        <div class="province-imgs hidden" data-province="shandong">
+                            <button class="bg-img-btn border-2 border-accent rounded overflow-hidden" data-img-src="https://picsum.photos/id/1063/800/600">
+                                <img src="https://picsum.photos/id/1063/200/150" alt="山东1" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1064/800/600">
+                                <img src="https://picsum.photos/id/1064/200/150" alt="山东2" class="w-full h-auto">
+                            </button>
+                            <button class="bg-img-btn border-2 border-gray-200 rounded overflow-hidden hover:border-accent" data-img-src="https://picsum.photos/id/1065/800/600">
+                                <img src="https://picsum.photos/id/1065/200/150" alt="山东3" class="w-full h-auto">
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 统一的评语输入框 -->
+                    <div>
+                        <label class="block text-gray-700 mb-2">编辑明信片评语</label>
+                        <textarea id="postcardTextEditor"
+                                  class="w-full h-20 border border-gray-200 rounded p-2 text-sm resize-none"
+                                  placeholder="写下你的研学感悟...">黄河之水天上来，奔流到海不复回。—— 青海湖祭海研学纪念</textarea>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex gap-4">
+                    <button id="shareBtn" class="bg-secondary text-white px-6 py-2 rounded-lg hover:bg-primary transition-colors flex-1">
+                        <i class="fa-solid fa-share-nodes mr-2"></i>分享明信片
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 知识问答板块 -->
+<section id="quiz" class="mb-16">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-primary mb-2">知识问答</h2>
+        <div class="w-20 h-1 bg-accent mx-auto"></div>
+        <p class="mt-4 text-gray-700">检验你的黄河祭祀文化研学成果</p>
+    </div>
+    <!-- 新增：开始检验按钮（初始显示） -->
+                <button id="startQuizBtn" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-accent transition-colors mb-6">
+                    <i class="fa-solid fa-play mr-2"></i>开始检验吧
+                </button>
+   <div class="bg-white p-6 rounded-lg shadow-md hidden" id="quizWrapper">
+         
+        <!-- 问答容器 -->
+        <div id="quizContainer" class="mb-6">
+            <!-- 题目1（修改后）- 核心是移除 label 外层的 ml-4 -->
+            <div class="quiz-item mb-8">
+                <h3 class="text-xl font-semibold text-dark mb-3">1. 以下哪种礼器常用于古代祭天，象征天圆地方的宇宙观？</h3>
+                <div class="space-y-2"> <!-- 移除 ml-4 -->
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q1" value="A" class="w-5 h-5 text-accent">
+                        <span>A. 玉琮</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q1" value="B" class="w-5 h-5 text-accent">
+                        <span>B. 玉璧</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q1" value="C" class="w-5 h-5 text-accent">
+                        <span>C. 青铜爵</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q1" value="D" class="w-5 h-5 text-accent">
+                        <span>D. 漆豆</span>
+                    </label>
+                    <div id="q1Result" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- 题目2 -->
+            <div class="quiz-item mb-8">
+                <h3 class="text-xl font-semibold text-dark mb-3">2. 青海湖祭海是哪个地区的传统祭祀活动？</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q2" value="A" class="w-5 h-5 text-accent">
+                        <span>A. 内蒙古</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q2" value="B" class="w-5 h-5 text-accent">
+                        <span>B. 青海</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q2" value="C" class="w-5 h-5 text-accent">
+                        <span>C. 甘肃</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q2" value="D" class="w-5 h-5 text-accent">
+                        <span>D. 宁夏</span>
+                    </label>
+                    <div id="q2Result" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- 题目3 -->
+            <div class="quiz-item mb-8">
+                <h3 class="text-xl font-semibold text-dark mb-3">3. 中元节祭祖的主要习俗不包括以下哪项？</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q3" value="A" class="w-5 h-5 text-accent">
+                        <span>A. 烧纸祈福</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q3" value="B" class="w-5 h-5 text-accent">
+                        <span>B. 放河灯</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q3" value="C" class="w-5 h-5 text-accent">
+                        <span>C. 煨桑</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q3" value="D" class="w-5 h-5 text-accent">
+                        <span>D. 祭祀祖先</span>
+                    </label>
+                    <div id="q3Result" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- 题目4 -->
+            <div class="quiz-item mb-8">
+                <h3 class="text-xl font-semibold text-dark mb-3">4. 黄帝陵公祭每年在哪个省份举行？</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q4" value="A" class="w-5 h-5 text-accent">
+                        <span>A. 陕西</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q4" value="B" class="w-5 h-5 text-accent">
+                        <span>B. 山西</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q4" value="C" class="w-5 h-5 text-accent">
+                        <span>C. 河南</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q4" value="D" class="w-5 h-5 text-accent">
+                        <span>D. 山东</span>
+                    </label>
+                    <div id="q4Result" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- 题目5 -->
+            <div class="quiz-item mb-8">
+                <h3 class="text-xl font-semibold text-dark mb-3">5. 傩舞最初的主要目的是什么？</h3>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q5" value="A" class="w-5 h-5 text-accent">
+                        <span>A. 娱乐表演</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q5" value="B" class="w-5 h-5 text-accent">
+                        <span>B. 驱邪纳吉</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q5" value="C" class="w-5 h-5 text-accent">
+                        <span>C. 庆祝丰收</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="q5" value="D" class="w-5 h-5 text-accent">
+                        <span>D. 祭祀祖先</span>
+                    </label>
+                    <div id="q5Result" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex gap-4 justify-center mb-4">
+            <button id="submitQuizBtn" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-accent transition-colors hidden">
+                <i class="fa-solid fa-paper-plane mr-2"></i>提交答案
+            </button>
+            <button id="resetQuizBtn" class="bg-secondary text-white px-6 py-2 rounded-lg hover:bg-primary transition-colors hidden">
+                <i class="fa-solid fa-refresh mr-2"></i>重新答题
+            </button>
+        </div>
+
+        <!-- 得分结果（初始隐藏） -->
+        <div id="quizResult" class="text-center hidden">
+            <h3 class="text-2xl font-bold text-primary mb-2" id="scoreText"></h3>
+            <p class="text-gray-700" id="resultDesc"></p>
+        </div>
+    </div>
+</section>
+
+        <!-- 关于我们 -->
+        <section id="about" class="mb-8">
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-primary mb-4">关于我们</h2>
+                <p class="text-gray-700 mb-4">
+                    本平台致力于黄河祭祀文化的传承与推广，通过研学手册、符号化科普、研学明信片等形式，让更多人了解黄河流域丰富的祭祀文化遗产，感受中华传统文化的博大精深。
+                </p>
+                <p class="text-gray-700">
+                    我们希望通过数字化、轻量化的展示方式，让传统文化活起来，为研学教育、文化传播提供优质的线上资源和互动体验。
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">黄河祭祀文化研学</h3>
+                    <p class="text-gray-300">传承黄河文化，弘扬中华传统</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">联系方式</h3>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><i class="fa-solid fa-envelope mr-2"></i>contact@huanghe.com</li>
+                        <li><i class="fa-solid fa-phone mr-2"></i>400-123-4567</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">关注我们</h3>
+                    <div class="flex gap-4 text-2xl">
+                        <a href="#" class="text-gray-300 hover:text-light transition-colors"><i class="fa-brands fa-weixin"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-light transition-colors"><i class="fa-brands fa-weibo"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-light transition-colors"><i class="fa-brands fa-tiktok"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400">
+                <p>© 2025 黄河祭祀文化研学平台 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 详情页弹窗 -->
+    <div id="detailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <!-- 弹窗头部 -->
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 id="modalTitle" class="text-2xl font-bold text-primary">详情介绍</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-primary text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- 弹窗内容 -->
+            <div class="p-6">
+                <!-- 图片展示区 -->
+                <div class="mb-6">
+                    <h4 class="text-xl font-semibold text-dark mb-3">相关图片</h4>
+                    <div id="imageGallery" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- 动态加载图片 -->
+                    </div>
+                </div>
+                
+                <!-- 文字介绍区 -->
+                <div class="mb-6">
+                    <h4 class="text-xl font-semibold text-dark mb-3">详细介绍</h4>
+                    <div id="contentDetail" class="text-gray-700 leading-relaxed">
+                        <!-- 动态加载文字 -->
+                    </div>
+                </div>
+                
+                <!-- 视频展示区 -->
+                <div class="mb-4">
+                    <h4 class="text-xl font-semibold text-dark mb-3">相关视频</h4>
+                    <div id="videoContainer" class="aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                        <!-- 动态加载视频 -->
+                        <div class="text-center text-gray-500">
+                            <i class="fa-solid fa-video text-4xl mb-2"></i>
+                            <p>点击播放相关视频</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 弹窗底部 -->
+            <div class="p-6 border-t flex justify-end">
+                <button id="closeModalBtn" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-accent transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- 新增：分享明信片弹窗 -->
+<div id="shareModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <!-- 弹窗头部 -->
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-primary">分享明信片</h3>
+            <button id="closeShareModal" class="text-gray-500 hover:text-primary text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <!-- 分享平台选项（微信/QQ/小红书/抖音） -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <!-- 微信 -->
+            <button class="share-platform bg-[#07C160] text-white py-4 rounded-lg flex flex-col items-center justify-center hover:bg-[#06B058] transition-colors">
+                <i class="fa-brands fa-weixin text-3xl mb-2"></i>
+                <span>微信</span>
+            </button>
+            <!-- QQ -->
+            <button class="share-platform bg-[#12B7F5] text-white py-4 rounded-lg flex flex-col items-center justify-center hover:bg-[#10A8E0] transition-colors">
+                <i class="fa-brands fa-qq text-3xl mb-2"></i>
+                <span>QQ</span>
+            </button>
+            <!-- 小红书（用book-open替代专属图标） -->
+            <button class="share-platform bg-[#FE2C55] text-white py-4 rounded-lg flex flex-col items-center justify-center hover:bg-[#FD1A43] transition-colors">
+                <i class="fa-solid fa-book-open text-3xl mb-2"></i>
+                <span>小红书</span>
+            </button>
+            <!-- 抖音 -->
+            <button class="share-platform bg-[#000000] text-white py-4 rounded-lg flex flex-col items-center justify-center hover:bg-[#222222] transition-colors">
+                <i class="fa-brands fa-tiktok text-3xl mb-2"></i>
+                <span>抖音</span>
+            </button>
+        </div>
+        
+        <!-- 提示文字 -->
+        <p class="text-center text-gray-600 text-sm">
+            <i class="fa-solid fa-info-circle mr-1 text-accent"></i>
+            
+        </p>
+    </div>
+</div>
+</div>
+
+    <!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 省份映射表
+    const provinceMap = {
+        'qinghai': { sealCode: '青', name: '青海' },
+        'gansu': { sealCode: '甘', name: '甘肃' },
+        'ningxia': { sealCode: '宁', name: '宁夏' },
+        'neimenggu': { sealCode: '蒙', name: '内蒙古' },
+        'sichuan': { sealCode: '川', name: '四川' },
+        'shanxi': { sealCode: '陕', name: '陕西' },
+        'shanxi2': { sealCode: '晋', name: '山西' },
+        'henan': { sealCode: '豫', name: '河南' },
+        'shandong': { sealCode: '鲁', name: '山东' }
+    };
+    // 反向映射：印章代码 -> 省份key（新增，解决印章和省份key的对应问题）
+    const sealToProvinceKey = {
+        '青': 'qinghai',
+        '甘': 'gansu',
+        '宁': 'ningxia',
+        '蒙': 'neimenggu',
+        '川': 'sichuan',
+        '陕': 'shanxi',
+        '晋': 'shanxi2',
+        '豫': 'henan',
+        '鲁': 'shandong'
+    };
+    let currentSelectedProvince = 'qinghai'; // 默认选中青海
+
+    // 元素获取
+    const postcardTextEditor = document.getElementById('postcardTextEditor');
+    const postcardText = document.getElementById('postcardText');
+    const postcardFront = document.querySelector('#postcardContainer > div:first-child');
+    const previewSeal = document.getElementById('previewSeal');
+    const sealItems = document.querySelectorAll('.seal-item');
+    const provinceTabs = document.querySelectorAll('.province-tab');
+    const provinceImgs = document.querySelectorAll('.province-imgs');
+    const bgImgBtns = document.querySelectorAll('.bg-img-btn');
+    const scanSealBtn = document.getElementById('scanSealBtn');
+    const qrcodeModal = document.getElementById('qrcodeModal');
+    const closeQrcodeModal = document.getElementById('closeQrcodeModal');
+    const postcardMaker = document.getElementById('postcardMaker');
+    const shareBtn = document.getElementById('shareBtn');
+    const postcardContainer = document.getElementById('postcardContainer');
+
+    // ---------------------- 科普标签切换逻辑 ----------------------
+    const scienceTabs = document.querySelectorAll('.科普-tab');
+    const scienceContents = document.querySelectorAll('.科普内容');
+    const detailModal = document.getElementById('detailModal');
+    const closeModal = document.getElementById('closeModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const imageGallery = document.getElementById('imageGallery');
+    const contentDetail = document.getElementById('contentDetail');
+    const videoContainer = document.getElementById('videoContainer');
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    // 1. 移动端菜单切换
+    if (menuBtn && mobileMenu) {
+        menuBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('hidden');
+            const icon = this.querySelector('i');
+            if (mobileMenu.classList.contains('hidden')) {
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            } else {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            }
+        });
+    }
+
+    // 2. 科普标签切换
+    if (scienceTabs.length > 0 && scienceContents.length > 0) {
+        scienceTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                scienceTabs.forEach(t => {
+                    t.classList.remove('bg-primary', 'active');
+                    t.classList.add('bg-secondary');
+                });
+                this.classList.add('bg-primary', 'active');
+                this.classList.remove('bg-secondary');
+                
+                const tabId = this.getAttribute('data-tab');
+                const targetContentId = `${tabId}-tab`;
+                
+                scienceContents.forEach(content => {
+                    content.classList.add('hidden');
+                    content.classList.remove('block');
+                });
+                
+                const targetContent = document.getElementById(targetContentId);
+                if (targetContent) {
+                    targetContent.classList.remove('hidden');
+                    targetContent.classList.add('block');
+                }
+            });
+        });
+    }
+
+    // 3. 科普卡片点击打开详情弹窗
+    const scienceCards = document.querySelectorAll('.card-hover');
+    if (scienceCards.length > 0 && detailModal) {
+        scienceCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const itemName = this.getAttribute('data-item');
+                const itemData = itemDetails[itemName];
+                
+                if (itemData) {
+                    modalTitle.textContent = itemData.title;
+                    imageGallery.innerHTML = '';
+                    itemData.images.forEach(imgSrc => {
+                        const imgDiv = document.createElement('div');
+                        imgDiv.className = 'rounded-lg overflow-hidden';
+                        imgDiv.innerHTML = `<img src="${imgSrc}" alt="${itemName}" class="w-full h-auto hover:scale-105 transition-transform">`;
+                        imageGallery.appendChild(imgDiv);
+                    });
+                    contentDetail.innerHTML = itemData.content.replace(/\n/g, '<br>');
+                    videoContainer.innerHTML = `<iframe width="100%" height="100%" src="${itemData.video}" frameborder="0" allowfullscreen></iframe>`;
+                    detailModal.classList.remove('hidden');
+                    document.body.classList.add('modal-open');
+                }
+            });
+        });
+    }
+
+    // 4. 关闭详情弹窗
+    const closeModalFun = function() {
+        detailModal.classList.add('hidden');
+        document.body.classList.remove('modal-open');
+    };
+    if (closeModal) closeModal.addEventListener('click', closeModalFun);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeModalFun);
+    if (detailModal) {
+        detailModal.addEventListener('click', function(e) {
+            if (e.target === detailModal) closeModalFun();
+        });
+    }
+
+    // ---------------------- 明信片核心逻辑（修复重点） ----------------------
+    // 1. 评语实时同步到预览
+    if (postcardTextEditor && postcardText) {
+        postcardText.textContent = postcardTextEditor.value;
+        postcardTextEditor.addEventListener('input', function() {
+            postcardText.textContent = this.value;
+        });
+    }
+
+    // 2. 省份标签切换
+    if (provinceTabs.length > 0 && provinceImgs.length > 0) {
+        provinceTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                provinceTabs.forEach(t => {
+                    t.classList.remove('bg-primary', 'text-white');
+                    t.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                this.classList.add('bg-primary', 'text-white');
+                this.classList.remove('bg-gray-200', 'text-gray-700');
+
+                currentSelectedProvince = this.getAttribute('data-province');
+
+                // 切换底图组
+                const targetProvince = this.getAttribute('data-province');
+                provinceImgs.forEach(imgBox => {
+                    imgBox.classList.remove('active');
+                });
+                const targetImgs = document.querySelector(`.province-imgs[data-province="${targetProvince}"]`);
+                if (targetImgs) {
+                    targetImgs.classList.add('active');
+                    const firstBtn = targetImgs.querySelector('.bg-img-btn');
+                    if (firstBtn) {
+                        targetImgs.querySelectorAll('.bg-img-btn').forEach(b => {
+                            b.classList.remove('border-accent');
+                            b.classList.add('border-gray-200');
+                        });
+                        firstBtn.classList.add('border-accent');
+                        firstBtn.classList.remove('border-gray-200');
+                        postcardFront.style.backgroundImage = `url(${firstBtn.getAttribute('data-img-src')})`;
+                    }
+                }
+            });
+        });
+    }
+
+    // 3. 底图按钮点击切换背景
+    if (bgImgBtns.length > 0 && postcardFront) {
+        bgImgBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const parentImgs = this.closest('.province-imgs');
+                if (parentImgs) {
+                    parentImgs.querySelectorAll('.bg-img-btn').forEach(b => {
+                        b.classList.remove('border-accent');
+                        b.classList.add('border-gray-200');
+                    });
+                    this.classList.add('border-accent');
+                    this.classList.remove('border-gray-200');
+                    postcardFront.style.backgroundImage = `url(${this.getAttribute('data-img-src')})`;
+                }
+            });
+        });
+    }
+
+    // 4. 印章进度区点击（核心修复：点亮印章时同步切换明信片底图）
+// 4. 印章进度区点击（仅保留视觉点亮效果，不切换明信片）
+if (sealItems.length > 0 && previewSeal) {
+    sealItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const sealDiv = this.querySelector('.w-16.h-16');
+            if (!sealDiv) return;
+            const isActive = !sealDiv.classList.contains('bg-gray-200');
+            const sealCode = this.getAttribute('data-province'); // 获取印章代码（如青、陕）
+            const sealText = this.querySelector('p');
+
+            if (isActive) {
+                // 取消点亮
+                sealDiv.classList.remove('bg-accent');
+                sealDiv.classList.add('bg-gray-200');
+                sealText?.classList.add('text-gray-500');
+                previewSeal.textContent = '';
+            } else {
+                // 仅点亮印章（不切换明信片底图）
+                sealDiv.classList.remove('bg-gray-200');
+                sealDiv.classList.add('bg-accent');
+                sealText?.classList.remove('text-gray-500');
+                previewSeal.textContent = sealCode;
+                // 【关键删除】移除自动切换明信片底图的逻辑
+            }
+        });
+    });
+}
+
+    // 5. 扫码点亮印章（核心修复：根据印章代码切换对应省份）
+    if (scanSealBtn && qrcodeModal) {
+        scanSealBtn.addEventListener('click', function() {
+            qrcodeModal.classList.remove('hidden');
+            document.body.classList.add('modal-open');
+        });
+    }
+
+if (closeQrcodeModal && qrcodeModal && postcardMaker) {
+    closeQrcodeModal.addEventListener('click', function() {
+        // 基础操作：关闭弹窗、恢复页面样式
+        qrcodeModal.classList.add('hidden');
+        document.body.classList.remove('modal-open');
+        postcardMaker.classList.remove('hidden');
+
+        // 核心修复：获取印章代码（而非省份标签值）
+        const scannedSealCode = previewSeal.textContent || '青'; // 默认值为“青”（青海）
+        // 根据印章代码匹配省份唯一标识
+        const targetProvinceKey = sealToProvinceKey[scannedSealCode];
+        
+        if (targetProvinceKey) {
+            // 第一步：点亮对应印章样式
+            const sealItem = document.querySelector(`.seal-item[data-province="${scannedSealCode}"]`);
+            if (sealItem) {
+                const sealDiv = sealItem.querySelector('.w-16.h-16'); // 印章图形容器
+                const sealText = sealItem.querySelector('p'); // 印章文字标签
+                sealDiv.classList.remove('bg-gray-200'); // 移除未点亮的灰色样式
+                sealDiv.classList.add('bg-accent'); // 添加点亮的高亮样式
+                sealText.classList.remove('text-gray-500'); // 移除文字灰色样式
+                previewSeal.textContent = scannedSealCode; // 更新预览印章文本
+            }
+
+            // 第二步：切换到对应省份底图
+            currentSelectedProvince = targetProvinceKey; // 更新全局选中省份
+            const provinceTab = document.querySelector(`.province-tab[data-province="${targetProvinceKey}"]`);
+            if (provinceTab) provinceTab.click(); // 模拟点击省份标签，触发底图切换
+        }
+    });
+}
+
+    // 6. 分享明信片
+    const shareModal = document.getElementById('shareModal');
+    const closeShareModal = document.getElementById('closeShareModal');
+    const sharePlatformBtns = document.querySelectorAll('.share-platform');
+    let postcardImgData = '';
+
+    if (shareBtn && postcardContainer) {
+        shareBtn.addEventListener('click', async function() {
+            // 保存原按钮内容并设置加载状态
+                const originalContent = this.innerHTML;
+                this.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>正在生成...';
+                this.disabled = true;
+            if (typeof html2canvas === 'undefined') {
+                alert('缺少 html2canvas 库');
+                return;
+            }
+            try {
+                const canvas = await html2canvas(postcardContainer, { scale: 2, useCORS: true });
+                postcardImgData = canvas.toDataURL('image/png');
+                shareModal.classList.remove('hidden');
+                document.body.classList.add('modal-open');
+            } catch (error) {
+                console.error('生成失败:', error);
+                alert('明信片生成失败，请重试！');
+            }finally {
+                // 恢复原按钮内容和状态
+                this.innerHTML = originalContent;
+                this.disabled = false;
+}
+        });
+    }
+
+    if (closeShareModal && shareModal) {
+        closeShareModal.addEventListener('click', function() {
+            shareModal.classList.add('hidden');
+            document.body.classList.remove('modal-open');
+        });
+        shareModal.addEventListener('click', function(e) {
+            if (e.target === shareModal) {
+                shareModal.classList.add('hidden');
+                document.body.classList.remove('modal-open');
+            }
+        });
+    }
+
+    if (sharePlatformBtns.length > 0) {
+        sharePlatformBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const platform = this.querySelector('span').textContent;
+                const downloadLink = document.createElement('a');
+                downloadLink.href = postcardImgData;
+                downloadLink.download = `黄河研学明信片_${platform}.png`;
+                downloadLink.click();
+
+                let tipText = '';
+                switch(platform) {
+                    case '微信':
+                        tipText = '明信片已保存到本地！请打开微信，在朋友圈/聊天窗口上传图片分享～';
+                        break;
+                    case 'QQ':
+                        tipText = '明信片已保存到本地！请打开QQ，在空间/聊天窗口上传图片分享～';
+                        break;
+                    case '小红书':
+                        tipText = '明信片已保存到本地！请打开小红书，发布笔记时上传该图片分享～';
+                        break;
+                    case '抖音':
+                        tipText = '明信片已保存到本地！请打开抖音，发布作品时上传该图片分享～';
+                        break;
+                }
+                alert(tipText);
+                shareModal.classList.add('hidden');
+                document.body.classList.remove('modal-open');
+            });
+        });
+    }
+
+    // ---------------------- 轮播图逻辑 ----------------------
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-item');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+
+    function showSlide(index) {
+        if (index >= slides.length) currentSlide = 0;
+        if (index < 0) currentSlide = slides.length - 1;
+        
+        slides.forEach(slide => {
+            slide.classList.remove('opacity-100');
+            slide.classList.add('opacity-0');
+        });
+        
+        dots.forEach(dot => {
+            dot.classList.remove('carousel-dot-active');
+            dot.classList.add('opacity-50');
+        });
+        
+        slides[currentSlide].classList.remove('opacity-0');
+        slides[currentSlide].classList.add('opacity-100');
+        dots[currentSlide].classList.add('carousel-dot-active');
+        dots[currentSlide].classList.remove('opacity-50');
+    }
+
+    const slideInterval = setInterval(() => {
+        currentSlide++;
+        showSlide(currentSlide);
+    }, 5000);
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            clearInterval(slideInterval);
+            currentSlide--;
+            showSlide(currentSlide);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            clearInterval(slideInterval);
+            currentSlide++;
+            showSlide(currentSlide);
+        });
+    }
+
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            clearInterval(slideInterval);
+            currentSlide = index;
+            showSlide(currentSlide);
+        });
+    });
+    // ---------------------- 知识问答逻辑 ----------------------
+// 正确答案
+const correctAnswers = {
+    q1: "B",
+    q2: "B",
+    q3: "C",
+    q4: "A",
+    q5: "B"
+};
+
+// 题目解析
+const answerExplanations = {
+    q1: "正确答案：B. 玉璧。玉璧是中央有穿孔的扁平状圆形玉器，常用于祭天，象征天圆地方的宇宙观；玉琮内圆外方，用于祭地；青铜爵是饮酒礼器；漆豆是盛食礼器。",
+    q2: "正确答案：B. 青海。青海湖祭海是青海地区蒙古族、藏族等民族的传统祭祀活动，祈求海神庇佑，风调雨顺。",
+    q3: "正确答案：C. 煨桑。煨桑是藏族的宗教仪式，中元节祭祖的习俗包括烧纸祈福、放河灯、祭祀祖先等。",
+    q4: "正确答案：A. 陕西。黄帝陵位于陕西黄陵，每年清明节举行公祭黄帝大典，是祭祀人文始祖轩辕黄帝的重要活动。",
+    q5: "正确答案：B. 驱邪纳吉。傩舞源于上古氏族社会的图腾崇拜，最初主要目的是驱邪纳吉、祈求平安，后来逐渐发展出娱乐功能。"
+};
+
+// 元素获取（新增 startQuizBtn）
+const startQuizBtn = document.getElementById('startQuizBtn'); // 新增
+const submitQuizBtn = document.getElementById('submitQuizBtn');
+const resetQuizBtn = document.getElementById('resetQuizBtn');
+const quizContainer = document.getElementById('quizWrapper'); // 新增
+const quizResult = document.getElementById('quizResult');
+const scoreText = document.getElementById('scoreText');
+const resultDesc = document.getElementById('resultDesc');
+
+// 新增：「开始检验」按钮点击事件
+if (startQuizBtn) {
+    startQuizBtn.addEventListener('click', function() {
+        startQuizBtn.classList.add('hidden'); // 隐藏开始按钮
+        quizContainer.classList.remove('hidden'); // 显示题目
+        submitQuizBtn.classList.remove('hidden'); // 显示提交按钮
+        resetQuizBtn.classList.add('hidden'); // 确保重置按钮隐藏
+        quizResult.classList.add('hidden'); // 确保结果区域隐藏
+    });
+}
+// 提交答案
+if (submitQuizBtn) {
+    submitQuizBtn.addEventListener('click', function() {
+        let score = 0;
+
+        // 检查每道题的答案
+        for (let i = 1; i <= 5; i++) {
+            const qName = `q${i}`;
+            const selectedOption = document.querySelector(`input[name="${qName}"]:checked`);
+            const resultEl = document.getElementById(`${qName}Result`);
+            resultEl.classList.remove('hidden');
+
+            if (!selectedOption) {
+                // 未答题
+                resultEl.textContent = `未作答！${answerExplanations[qName]}`;
+                resultEl.className = "mt-2 text-sm text-gray-500";
+            } else {
+                const selectedValue = selectedOption.value;
+                if (selectedValue === correctAnswers[qName]) {
+                    // 答对
+                    score++;
+                    resultEl.textContent = `回答正确！${answerExplanations[qName]}`;
+                    resultEl.className = "mt-2 text-sm text-green-600 font-medium";
+                } else {
+                    // 答错
+                    resultEl.textContent = `回答错误！${answerExplanations[qName]}`;
+                    resultEl.className = "mt-2 text-sm text-red-600 font-medium";
+                }
+            }
+        }
+
+        // 计算得分（每题20分，总分100）
+        const totalScore = score * 20;
+        scoreText.textContent = `你的得分：${totalScore}分`;
+        
+        // 结果描述
+        let desc = '';
+        if (totalScore === 100) desc = "太棒了！你对黄河祭祀文化的知识掌握得非常全面。";
+        else if (totalScore >= 80) desc = "优秀！你对黄河祭祀文化有深入的了解。";
+        else if (totalScore >= 60) desc = "合格！你基本掌握了黄河祭祀文化的核心知识。";
+        else desc = "还需努力！建议再仔细学习一下黄河祭祀文化的相关知识。";
+        resultDesc.textContent = desc;
+
+        // 显示结果，切换按钮状态
+        quizResult.classList.remove('hidden');
+        submitQuizBtn.classList.add('hidden');
+        resetQuizBtn.classList.remove('hidden');
+
+        // 禁用所有单选框
+        document.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = true);
+    });
+}
+
+// 重新答题（调整逻辑：重置为初始状态）
+if (resetQuizBtn) {
+    resetQuizBtn.addEventListener('click', function() {
+        // 重置单选框（原有逻辑不变）
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.checked = false;
+            radio.disabled = false;
+        });
+
+        // 隐藏结果提示（原有逻辑不变）
+        for (let i = 1; i <= 5; i++) {
+            const resultEl = document.getElementById(`q${i}Result`);
+            resultEl.classList.add('hidden');
+            resultEl.textContent = '';
+        }
+
+        // 重置结果面板和按钮（调整：回到初始状态）
+        quizResult.classList.add('hidden');
+        resetQuizBtn.classList.add('hidden');
+        quizContainer.classList.add('hidden'); // 隐藏题目
+        submitQuizBtn.classList.add('hidden'); // 隐藏提交按钮
+        startQuizBtn.classList.remove('hidden'); // 显示开始检验按钮
+    });
+}
+});
+// 数据存储 - 所有科普词条的详细信息
+const itemDetails = {
+    // 礼器系列
+    "玉璧": {
+        title: "玉璧",
+        images: [
+            "https://picsum.photos/id/175/600/400",
+            "https://picsum.photos/id/201/600/400",
+            "https://picsum.photos/id/202/600/400"
+        ],
+        content: `玉璧是一种中央有穿孔的扁平状圆形玉器，为我国传统的玉礼器之一，也是"六瑞"之一。《尔雅·释器》载："肉（器体）倍好（穿孔）谓之璧，好倍肉谓之瑗，肉好若一谓之环。"
+
+在祭祀活动中，玉璧常被用于祭天，象征着天圆地方的宇宙观。玉璧的使用历史悠久，从新石器时代开始，历经商周、秦汉，直至明清，始终是重要的祭祀礼器。
+
+不同时期的玉璧在形制、纹饰上各有特点：
+1. 新石器时代：多为素面，形制简单
+2. 商周时期：出现纹饰，以龙纹、凤纹、云纹为主
+3. 汉代：纹饰精美，流行蒲纹、谷纹
+4. 明清时期：工艺精湛，成为重要的礼器和陈设品
+
+玉璧不仅是祭祀礼器，也是重要的陪葬品和馈赠品，体现了古代玉器文化的博大精深。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ" // 示例视频链接
+    },
+    "玉琮": {
+        title: "玉琮",
+        images: [
+            "https://picsum.photos/id/176/600/400",
+            "https://picsum.photos/id/203/600/400",
+            "https://picsum.photos/id/204/600/400"
+        ],
+        content: `玉琮是一种内圆外方的筒形玉器，是古代人们用于祭祀神祇的一种礼器。其形制体现了古人天圆地方的宇宙观，为新石器时代良渚文化的典型器物。
+
+良渚文化玉琮最为著名，通常由软玉雕琢而成，纹饰以神人兽面纹为主，工艺精湛。玉琮的功能主要有：
+1. 祭祀天地的礼器，内圆象征天，外方象征地
+2. 权力和地位的象征，只有贵族才能拥有
+3. 陪葬品，用于祭祀祖先
+
+玉琮的使用延续了数千年，在商周时期仍有制作，但形制和功能逐渐演变。汉代以后，玉琮逐渐退出实用领域，成为仿古玉器的重要品类。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "青铜尊": {
+        title: "青铜尊",
+        images: [
+            "https://picsum.photos/id/177/600/400",
+            "https://picsum.photos/id/205/600/400",
+            "https://picsum.photos/id/206/600/400"
+        ],
+        content: `青铜尊是商周时期重要的礼器和酒器，主要用于祭祀活动中盛放酒醴。《说文解字》："尊，酒器也。"
+
+青铜尊的种类繁多，主要有：
+1. 牺尊：模仿鸟兽形态的尊
+2. 象尊：模仿大象形态
+3. 鸮尊：模仿猫头鹰形态
+4. 牛尊、羊尊等各种动物形尊
+5. 觚形尊：筒状尊
+
+青铜尊的纹饰精美，常见的有饕餮纹、云雷纹、夔龙纹等，反映了当时高超的青铜铸造工艺和祭祀文化。在祭祀仪式中，尊通常与爵、觚等酒器配合使用，是礼器组合中的重要组成部分。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "青铜爵": {
+        title: "青铜爵",
+        images: [
+            "https://picsum.photos/id/178/600/400",
+            "https://picsum.photos/id/207/600/400",
+            "https://picsum.photos/id/208/600/400"
+        ],
+        content: `青铜爵是中国古代一种用于饮酒的容器，也是最早的青铜礼器之一。爵的形制特征是：前有流（倾酒的流槽），后有尾，中有杯，一侧有鋬，下有三足，流与杯口之际有柱。
+
+在祭祀仪式中，爵常被用作献酒的礼器，是身份和等级的象征。不同等级的贵族使用的爵在形制、纹饰上有所区别：
+1. 商代早期：爵形简单，无柱或有短柱
+2. 商代晚期：爵形复杂，柱较高，纹饰精美
+3. 西周时期：爵的使用更加规范，成为礼器组合的核心
+
+青铜爵的使用贯穿了整个青铜时代，直至春秋战国时期逐渐被其他酒器取代。爵不仅是实用的酒器，更是礼制文化的重要载体。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "漆豆": {
+        title: "漆豆",
+        images: [
+            "https://picsum.photos/id/179/600/400",
+            "https://picsum.photos/id/209/600/400",
+            "https://picsum.photos/id/210/600/400"
+        ],
+        content: `漆豆是古代一种盛食的礼器，以漆工艺装饰而成。豆的基本形制是上有盘，下有柄，底有圈足。漆豆即在木质或陶质的豆上髹漆装饰，是漆器中的重要品类。
+
+在祭祀活动中，漆豆用于盛放祭品，是礼制文化的重要载体，体现了古代祭祀的等级规范。《周礼》中对不同等级贵族使用的豆有明确规定：
+1. 天子：二十有六豆
+2. 诸侯：十有六豆
+3. 卿：十有二豆
+4. 大夫：八豆
+5. 士：六豆
+
+漆豆的纹饰丰富多样，常见的有云纹、雷纹、龙凤纹等，色彩以红、黑为主，体现了古代漆器工艺的高超水平。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    
+    // 祭祀习俗
+    "迎神庙会": {
+        title: "迎神庙会",
+        images: [
+            "https://picsum.photos/id/180/600/400",
+            "https://picsum.photos/id/211/600/400",
+            "https://picsum.photos/id/212/600/400"
+        ],
+        content: `迎神庙会是民间祭祀文化的重要形式，通常在特定的宗教节日或祭祀日举行，包含迎神、巡游、祭拜等环节，是民众表达祈福求安愿望的重要方式。
+
+迎神庙会的主要流程：
+1. 前期准备：打扫庙宇、准备祭品、制作神轿
+2. 启神仪式：由主祭人宣读祭文，开启迎神仪式
+3. 神像巡游：将神像请入神轿，由信众抬着巡游
+4. 沿街祭拜：沿途民众摆香案、放鞭炮、行跪拜礼
+5. 归位安座：巡游结束后将神像送回庙宇，举行安座仪式
+
+不同地区的迎神庙会各具特色，北方多与春节、元宵节结合，南方则多在妈祖诞辰、保生大帝诞辰等日子举行。迎神庙会不仅是祭祀活动，也是重要的民间文化盛会。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "中元祭祖": {
+        title: "中元祭祖",
+        images: [
+            "https://picsum.photos/id/181/600/400",
+            "https://picsum.photos/id/213/600/400",
+            "https://picsum.photos/id/214/600/400"
+        ],
+        content: `中元节又称鬼节、七月半，是中华民族传统的祭祖节日，通常在农历七月十五举行（部分地区在七月十四）。
+
+中元祭祖的主要习俗：
+1. 祭祀祖先：在家中设牌位，摆放祭品，焚香祭拜
+2. 烧纸祈福：焚烧纸钱、纸衣、纸屋等，供先人使用
+3. 放河灯：在河流、湖泊放河灯，超度亡灵
+4. 普度孤魂：寺庙举行法会，施食给孤魂野鬼
+5. 吃鸭：部分地区有吃鸭子的习俗，寓意压邪
+
+中元节的起源与道教的三元节有关，七月十五为中元节，地官赦罪。佛教则称之为盂兰盆节，源于目连救母的故事。中元节融合了儒、释、道三教文化，是中华传统文化的重要组成部分。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "龙舟祭": {
+        title: "龙舟祭",
+        images: [
+            "https://picsum.photos/id/182/600/400",
+            "https://picsum.photos/id/215/600/400",
+            "https://picsum.photos/id/216/600/400"
+        ],
+        content: `龙舟祭主要流行于南方水乡，与端午节纪念屈原的习俗相结合。通过龙舟竞渡、祭祀龙神等仪式，祈求风调雨顺、平安吉祥，是水上祭祀文化的代表。
+
+龙舟祭的主要仪式：
+1. 请龙仪式：从河中请出龙舟，举行开光点睛仪式
+2. 祭祀屈原：在龙舟上摆放祭品，宣读祭文
+3. 龙舟竞渡：各支龙舟队比赛，既是竞技也是祭祀
+4. 送龙归海：活动结束后将龙舟送回水中，祈求龙神保佑
+
+不同地区的龙舟祭各具特色：
+- 湖南汨罗：屈原故里，仪式最为隆重
+- 广东珠三角：注重龙舟制作和装饰
+- 福建闽南：结合保生大帝信仰
+- 台湾地区：融合闽南文化和当地特色
+
+龙舟祭已被列入国家级非物质文化遗产名录，是中华水上文化的重要代表。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "煨桑": {
+        title: "煨桑",
+        images: [
+            "https://picsum.photos/id/190/600/400",
+            "https://picsum.photos/id/217/600/400",
+            "https://picsum.photos/id/218/600/400"
+        ],
+        content: `煨桑是藏族最普遍的一种宗教仪式，用松柏枝焚起的霭蔼烟雾，是藏族祭天地诸神的仪式。"煨桑"是藏语，意为"燃烧松柏枝"。
+
+煨桑的具体做法：
+1. 准备材料：松柏枝、青稞面、茶叶、糖、酥油等
+2. 搭建桑炉：在固定地点用石头搭建桑炉
+3. 点燃松柏：将松柏枝放入桑炉点燃，产生浓烟
+4. 撒放供品：将青稞面、茶叶等撒入火中，口中念诵经文
+5. 祈祷祝福：面对桑烟，双手合十，祈求平安吉祥
+
+煨桑的种类：
+1. 日常煨桑：每天早晨进行，祈求一天平安
+2. 节日煨桑：在藏历新年、望果节等节日举行
+3. 特殊煨桑：在出征、远行、婚丧等重要时刻举行
+
+煨桑不仅是宗教仪式，也是藏族人民表达对自然敬畏和对美好生活向往的重要方式。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "火把节祭火": {
+        title: "火把节祭火",
+        images: [
+            "https://picsum.photos/id/191/600/400",
+            "https://picsum.photos/id/219/600/400",
+            "https://picsum.photos/id/220/600/400"
+        ],
+        content: `火把节祭火是彝族、白族、纳西族等民族的传统祭祀活动，通常在农历六月二十四举行，被称为"东方的狂欢节"。
+
+火把节祭火的主要仪式：
+1. 取火仪式：由毕摩（祭司）用古老方式钻木取火，获得圣火
+2. 祭火大典：向火神敬献祭品，祈求驱邪避灾
+3. 点火把：家家户户点燃火把，绕屋绕田巡游
+4. 篝火晚会：围着篝火唱歌跳舞，通宵达旦
+5. 送火仪式：次日将火把送入河中，寓意送走灾难
+
+不同民族的火把节各具特色：
+- 彝族：注重祭火和斗牛、赛马等活动
+- 白族：结合本主信仰，有耍龙舞狮等表演
+- 纳西族：与东巴文化结合，有祭祀自然神的仪式
+
+火把节祭火体现了西南少数民族对火的崇拜，是中华民族多元文化的重要组成部分。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    
+    // 祭祀艺术
+    "傩戏面具": {
+        title: "傩戏面具",
+        images: [
+            "https://picsum.photos/id/183/600/400",
+            "https://picsum.photos/id/221/600/400",
+            "https://picsum.photos/id/222/600/400"
+        ],
+        content: `傩戏面具是傩戏表演的重要道具，造型夸张、色彩鲜明，不同的面具代表不同的神祇和角色。傩戏面具不仅是艺术作品，更是祭祀文化的重要载体。
+
+傩戏面具的分类：
+1. 正神面具：如玉皇大帝、太上老君等，造型端庄威严
+2. 凶神面具：如开山、钟馗等，造型凶猛恐怖
+3. 世俗面具：如将军、文官、老人等，造型贴近生活
+4. 动物面具：如龙、虎、豹等，造型夸张变形
+
+傩戏面具的制作工艺：
+1. 选材：多选用香樟木、杨木等质地细腻的木材
+2. 雕刻：采用圆雕、浮雕等技法，注重面部表情刻画
+3. 彩绘：用矿物颜料上色，色彩对比强烈
+4. 上漆：多层上漆，保护面具并增加光泽
+
+不同地区的傩戏面具风格各异，贵州傩戏面具古朴厚重，安徽傩戏面具精致华美，江西傩戏面具简洁粗犷。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "傩舞": {
+        title: "傩舞",
+        images: [
+            "https://picsum.photos/id/184/600/400",
+            "https://picsum.photos/id/223/600/400",
+            "https://picsum.photos/id/224/600/400"
+        ],
+        content: `傩舞是一种古老的祭祀舞蹈，源于上古氏族社会的图腾崇拜，旨在驱邪纳吉、祈求平安。表演时舞者佩戴傩面具，动作刚劲有力，具有浓厚的原始宗教色彩。
+
+傩舞的主要类型：
+1. 民间傩舞：流行于乡村，仪式相对简单
+2. 宫廷傩舞：古代宫廷举行的傩仪，规模宏大
+3. 军傩：流行于军队中的傩舞，用于鼓舞士气
+4. 寺院傩：与佛教结合的傩舞形式
+
+傩舞的基本动作特征：
+1. 步伐：以方步、罡步为主，讲究踩点准确
+2. 手势：有特定的手诀，代表不同的寓意
+3. 身段：讲究刚柔相济，动静结合
+4. 节奏：配合锣鼓，节奏鲜明有力
+
+傩舞的表演内容多与驱邪、祈福、祭祀相关，常见的有《开天辟地》《钟馗捉鬼》《十二神舞》等。傩舞被称为"舞蹈活化石"，是研究中国古代舞蹈和祭祀文化的重要实物资料。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "雩舞": {
+        title: "雩舞",
+        images: [
+            "https://picsum.photos/id/192/600/400",
+            "https://picsum.photos/id/225/600/400",
+            "https://picsum.photos/id/226/600/400"
+        ],
+        content: `雩舞是古代求雨的祭祀舞蹈，是雩祭仪式中的重要组成部分。舞者通常模拟龙的形态，通过特定的舞蹈动作祈求上天降雨，以解旱灾，体现了古人对自然的敬畏。
+
+雩舞的历史渊源：
+1. 商代：已有雩祭活动，舞蹈动作简单
+2. 周代：形成完整的雩祭制度，分为"常雩"和"大雩"
+3. 汉代：雩舞仪式更加规范，有专门的乐舞人员
+4. 唐宋：雩舞逐渐程式化，成为礼制的一部分
+
+雩舞的表演形式：
+1. 场地：通常在郊外设坛，或在宗庙内举行
+2. 人员：由乐官、舞师带领，童男童女参与
+3. 动作：模拟龙的腾飞、游动、吐水等动作
+4. 配乐：使用鼓、磬、埙等乐器，节奏舒缓庄重
+
+雩舞是中国古代祈雨文化的重要体现，反映了农耕社会对自然的依赖和敬畏。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "祠神戏": {
+        title: "祠神戏",
+        images: [
+            "https://picsum.photos/id/193/600/400",
+            "https://picsum.photos/id/227/600/400",
+            "https://picsum.photos/id/228/600/400"
+        ],
+        content: `祠神戏又称酬神戏，是民间为祭祀神灵、祈求平安而演出的戏曲形式。通常在祠堂、庙宇或广场演出，内容多与祈福、驱邪、感恩相关，是祭祀与艺术的结合。
+
+祠神戏的主要特点：
+1. 演出场所：多在祠堂、庙宇的戏台，或临时搭建的草台
+2. 演出时间：多在庙会、神诞、丰收等特殊日子
+3. 演出内容：以祈福、驱邪、忠孝节义等为主
+4. 表演形式：融合戏曲、歌舞、杂技等多种艺术形式
+
+不同地区的祠神戏：
+- 南方：以越剧、黄梅戏、粤剧等地方戏曲为主
+- 北方：以梆子、秦腔、评剧等为主
+- 西南：以川剧、滇剧等为主
+
+祠神戏不仅是娱乐形式，更是民间信仰和文化传承的重要载体，具有重要的民俗学价值。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "云雷纹": {
+        title: "云雷纹",
+        images: [
+            "https://picsum.photos/id/185/600/400",
+            "https://picsum.photos/id/229/600/400",
+            "https://picsum.photos/id/230/600/400"
+        ],
+        content: `云雷纹是商周时期青铜器上常见的纹饰，由连续的回旋线条构成，象征着云气和雷声，是古人对自然力量的崇拜体现，常用于祭祀礼器的装饰。
+
+云雷纹的分类：
+1. 云纹：由柔和的回旋线条构成，象征云气
+2. 雷纹：由方折的回旋线条构成，象征雷声
+3. 云雷纹：云纹和雷纹组合使用
+
+云雷纹的应用：
+1. 主要用于青铜器的地纹，衬托主纹
+2. 也用于玉器、陶器、漆器等器物装饰
+3. 不同时期风格不同：商代粗犷，西周规整，春秋战国细密
+
+云雷纹的文化内涵：
+1. 象征天地自然的力量
+2. 寓意风调雨顺，五谷丰登
+3. 体现了古人对自然的敬畏和崇拜
+
+云雷纹是中国古代装饰艺术的重要元素，对后世的装饰纹样产生了深远影响。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "凤鸟纹": {
+        title: "凤鸟纹",
+        images: [
+            "https://picsum.photos/id/194/600/400",
+            "https://picsum.photos/id/231/600/400",
+            "https://picsum.photos/id/232/600/400"
+        ],
+        content: `凤鸟纹是中国古代青铜器上的重要纹饰，凤鸟被视为神鸟，象征吉祥、美好与神圣。在祭祀礼器上装饰凤鸟纹，表达了古人对神灵的敬仰和对美好生活的向往。
+
+凤鸟纹的发展历程：
+1. 商代：凤鸟纹造型简单，多为侧面形象
+2. 西周：凤鸟纹成为主流纹饰，造型华丽，姿态多样
+3. 春秋战国：凤鸟纹更加灵动，与其他纹饰组合使用
+4. 汉代以后：凤鸟纹逐渐世俗化，成为吉祥图案
+
+凤鸟纹的文化寓意：
+1. 象征吉祥、太平、光明
+2. 代表皇后和女性的高贵身份
+3. 体现了古人对美好未来的向往
+4. 是中华民族的文化符号之一
+
+凤鸟纹不仅用于青铜器，还广泛应用于玉器、丝织品、建筑装饰等领域，是中国传统文化的重要符号。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    
+    // 地域特色
+    "青海湖祭海": {
+        title: "青海：青海湖祭海",
+        images: [
+            "https://picsum.photos/id/186/600/400",
+            "https://picsum.photos/id/233/600/400",
+            "https://picsum.photos/id/234/600/400"
+        ],
+        content: `青海湖祭海是青海地区蒙古族、藏族等民族的传统祭祀活动，已有数百年历史。通过祭海仪式祈求海神庇佑，风调雨顺，渔业丰收。
+
+祭海仪式的主要流程：
+1. 准备祭品：青稞酒、酥油、牛羊肉、五谷等
+2. 搭建祭台：在湖边搭建临时祭台，悬挂经幡
+3. 诵经祈福：由活佛或萨满诵经，祈求海神保佑
+4. 敬献祭品：将祭品投入湖中，敬献海神
+5. 赛马射箭：祭海仪式后举行传统体育活动
+
+祭海的文化内涵：
+1. 体现了对自然的敬畏和感恩
+2. 融合了藏传佛教和萨满教的文化元素
+3. 是多民族文化交流融合的体现
+4. 反映了游牧民族的生存智慧
+
+青海湖祭海已被列入青海省非物质文化遗产名录，是青藏高原独特的文化景观。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "天水公祭伏羲大典": {
+        title: "甘肃：天水公祭伏羲大典",
+        images: [
+            "https://picsum.photos/id/187/600/400",
+            "https://picsum.photos/id/235/600/400",
+            "https://picsum.photos/id/236/600/400"
+        ],
+        content: `天水是人文始祖伏羲的诞生地，公祭伏羲大典是甘肃省重要的文化祭祀活动，旨在传承和弘扬伏羲文化，缅怀始祖功绩，增强民族文化认同。
+
+公祭伏羲大典的主要流程：
+1. 迎神仪式：鸣礼炮、奏乐，迎请伏羲圣像
+2. 敬献花篮：各界代表敬献花篮，表达敬仰
+3. 恭读祭文：主祭人宣读祭文，缅怀伏羲功绩
+4. 乐舞告祭：表演传统乐舞，表达崇敬之情
+5. 敬献祭品：敬献五谷、果品等祭品
+6. 恭送圣像：仪式结束，恭送圣像归位
+
+伏羲文化的核心内涵：
+1. 人文始祖：伏羲画八卦、结网罟、定嫁娶，开启文明
+2. 文化源头：伏羲文化是中华传统文化的重要源头
+3. 民族认同：公祭伏羲增强中华民族的文化认同和凝聚力
+
+公祭伏羲大典已成为国家级的文化祭祀活动，每年吸引海内外华人参与。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "隆德马社火": {
+        title: "宁夏：隆德马社火/高台社火",
+        images: [
+            "https://picsum.photos/id/195/600/400",
+            "https://picsum.photos/id/237/600/400",
+            "https://picsum.photos/id/238/600/400"
+        ],
+        content: `隆德马社火是宁夏隆德县的传统民俗祭祀活动，融合了舞蹈、音乐、戏剧等多种艺术形式，高台社火更是其特色，通过登高表演祈求风调雨顺、平安吉祥。
+
+马社火的主要形式：
+1. 马社火：演员骑在马上表演，装扮成历史人物
+2. 高台社火：将儿童装扮成戏剧人物，固定在高台上巡游
+3. 地社火：在地面表演的社火，包括秧歌、腰鼓等
+
+隆德社火的表演内容：
+1. 历史故事：如《三国演义》《西游记》等
+2. 神话传说：如《封神演义》等
+3. 吉祥祈福：如财神、福禄寿三星等
+
+隆德社火的文化价值：
+1. 融合了秦陇文化和少数民族文化
+2. 是农耕文化的重要体现
+3. 具有重要的民俗学和艺术学价值
+
+隆德社火已被列入国家级非物质文化遗产名录，是宁夏地区重要的文化名片。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "祭敖包": {
+        title: "内蒙古：祭敖包",
+        images: [
+            "https://picsum.photos/id/196/600/400",
+            "https://picsum.photos/id/239/600/400",
+            "https://picsum.photos/id/240/600/400"
+        ],
+        content: `祭敖包是蒙古族的传统祭祀活动，敖包是草原上用石头、泥土堆砌的祭祀载体。通过祭敖包祈求天地神保佑草原风调雨顺、人畜兴旺、平安吉祥。
+
+祭敖包的主要流程：
+1. 准备祭品：奶酒、牛羊肉、奶制品、哈达等
+2. 绕敖包：顺时针绕敖包三圈，添加石头或布条
+3. 敬献祭品：将祭品摆放在敖包前，敬献神灵
+4. 诵经祈福：由喇嘛或长者诵经，祈求平安
+5. 赛马摔跤：祭祀结束后举行传统体育活动
+
+敖包的种类：
+1. 部落敖包：整个部落共同祭祀的敖包
+2. 家族敖包：某个家族专属的敖包
+3. 路敖包：设在路口的敖包，保佑出行平安
+4. 兵敖包：与战争相关的敖包，保佑战事顺利
+
+祭敖包体现了蒙古族的自然崇拜和祖先崇拜，是草原文化的重要组成部分。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "尼木措毕祭祀": {
+        title: "四川：凉山彝族尼木措毕祭祀",
+        images: [
+            "https://picsum.photos/id/197/600/400",
+            "https://picsum.photos/id/241/600/400",
+            "https://picsum.photos/id/242/600/400"
+        ],
+        content: `尼木措毕是凉山彝族最重要的祭祖大典，每三年或七年举行一次，通过复杂的仪式缅怀祖先、超度亡灵，是彝族文化传承的重要载体。
+
+尼木措毕祭祀的主要流程：
+1. 前期准备：择吉日、请毕摩、准备祭品
+2. 祭祀仪式：毕摩诵经，超度祖先亡灵
+3. 宰杀牺牲：宰杀牛羊等牺牲，敬献祖先
+4. 分食祭品：将祭品分发给族人，共享福祉
+5. 送灵仪式：将祖先的灵牌送到指定地点
+
+尼木措毕的文化内涵：
+1. 祖先崇拜：体现彝族对祖先的敬仰和缅怀
+2. 文化传承：通过仪式传承彝族的历史和文化
+3. 社会整合：增强家族和民族的凝聚力
+4. 生态智慧：体现人与自然和谐相处的理念
+
+尼木措毕已被列入国家级非物质文化遗产名录，是彝族文化的活态传承。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "黄帝陵公祭": {
+        title: "陕西：黄帝陵公祭",
+        images: [
+            "https://picsum.photos/id/188/600/400",
+            "https://picsum.photos/id/243/600/400",
+            "https://picsum.photos/id/244/600/400"
+        ],
+        content: `黄帝陵公祭是中华民族祭祀人文始祖轩辕黄帝的重要活动，每年清明节在陕西黄陵举行。大典庄重肃穆，是传承中华文脉、凝聚民族情感的重要载体。
+
+公祭黄帝陵的主要流程：
+1. 全体肃立：鸣礼炮，奏乐，全体人员肃立
+2. 敬献花篮：党和国家领导人、各界代表敬献花篮
+3. 恭读祭文：主祭人宣读祭文，缅怀黄帝功绩
+4. 行三鞠躬礼：全体人员向黄帝陵行三鞠躬礼
+5. 乐舞告祭：表演《轩辕大典》乐舞，表达崇敬
+
+黄帝陵的文化价值：
+1. 中华根脉：黄帝陵是中华民族的精神标识
+2. 文化认同：公祭黄帝增强海内外华人的文化认同
+3. 民族凝聚：是凝聚民族情感的重要平台
+4. 文明传承：传承和弘扬中华优秀传统文化
+
+黄帝陵公祭已成为国家级的重大祭祀活动，是中华文明的重要象征。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "后土祠祭祀": {
+        title: "山西：万荣后土祠祭祀",
+        images: [
+            "https://picsum.photos/id/198/600/400",
+            "https://picsum.photos/id/245/600/400",
+            "https://picsum.photos/id/246/600/400"
+        ],
+        content: `万荣后土祠是祭祀后土圣母的圣地，后土祠祭祀活动历史悠久，是华夏民族祭祀大地之母的重要仪式，祈求五谷丰登、国泰民安。
+
+后土祠祭祀的历史渊源：
+1. 远古时期：已有祭祀地神的活动
+2. 汉代：汉武帝多次亲临祭祀，形成制度
+3. 唐宋：祭祀活动达到鼎盛，皇帝多次御祭
+4. 明清：民间祭祀活动盛行
+
+后土祠祭祀的主要仪式：
+1. 开坛仪式：由主祭人开启祭祀大典
+2. 敬献祭品：敬献五谷、果品、酒醴等祭品
+3. 恭读祭文：宣读祭文，祈求大地母亲保佑
+4. 乐舞告祭：表演传统乐舞，表达崇敬之情
+5. 万民祈福：民众上香祈福，祈求平安丰收
+
+后土祠祭祀体现了中华民族的土地崇拜和感恩情怀，是农耕文明的重要体现。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "浚县古庙会": {
+        title: "河南：浚县正月古庙会/社火",
+        images: [
+            "https://picsum.photos/id/199/600/400",
+            "https://picsum.photos/id/247/600/400",
+            "https://picsum.photos/id/248/600/400"
+        ],
+        content: `浚县正月古庙会是河南浚县的传统祭祀民俗活动，已有1600多年历史，结合了祭祀、社火、商贸等元素，是华北地区规模最大的古庙会之一。
+
+浚县古庙会的主要特色：
+1. 时间长：从正月初一持续到二月初二，长达一个月
+2. 规模大：每天参与人数达数十万人
+3. 内容丰富：融合祭祀、社火、商贸、娱乐等
+4. 形式多样：有高跷、舞狮、旱船、背阁等社火表演
+
+浚县社火的主要形式：
+1. 高跷：表演者踩高跷表演各种动作
+2. 背阁：成人背负儿童表演，高达数米
+3. 舞狮：南北狮表演，技艺精湛
+4. 旱船：模拟水上行船的舞蹈
+
+浚县古庙会已被列入国家级非物质文化遗产名录，是中原地区重要的民俗文化活动。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    "祭孔大典": {
+        title: "山东：曲阜祭孔大典",
+        images: [
+            "https://picsum.photos/id/200/600/400",
+            "https://picsum.photos/id/249/600/400",
+            "https://picsum.photos/id/250/600/400"
+        ],
+        content: `曲阜祭孔大典是祭祀孔子的隆重仪式，每年孔子诞辰日（农历八月二十七日）举行，大典遵循古制，礼仪规范，是传承儒家文化、弘扬中华传统美德的重要活动。
+
+祭孔大典的主要流程：
+1. 开庙仪式：开启孔庙大门，迎请嘉宾
+2. 敬献花篮：各界代表向孔子像敬献花篮
+3. 三献礼：初献、亚献、终献，敬献祭品
+4. 恭读祭文：主祭人宣读祭文，缅怀孔子思想
+5. 乐舞告祭：表演《大成乐舞》，表达崇敬
+
+祭孔大典的文化价值：
+1. 文化传承：传承和弘扬儒家思想文化
+2. 道德教化：弘扬尊师重教、仁爱孝悌的传统美德
+3. 文明交流：是中外文化交流的重要平台
+4. 民族凝聚：增强中华民族的文化自信和凝聚力
+
+祭孔大典已成为国家级的文化祭祀活动，影响遍及海内外。`,
+        video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    }
+};
+   </script>
+</body>
+</html>
